@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Object Detection</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs" ></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet" ></script>
+  <script type="text/javascript" src="https://unpkg.com/webcam-easy/dist/webcam-easy.min.js" ></script></head>
+<body>
+  <h1>Object Detection</h1>
+
+
+  <video id="webcam" autoplay playsinline width="640" height="480"></video>
+  <canvas id="canvas" class="d-none"></canvas>
+  <audio id="snapSound" src="audio/snap.wav" preload="auto"></audio>
+  <button id="take-photo">Take Photo</button>
+  <div id="results"></div>
+
+  <script>
+    const webcamElement = document.getElementById('webcam');
+    const canvasElement = document.getElementById('canvas');
+    const snapSoundElement = document.getElementById('snapSound');
+    const webcam = new Webcam(webcamElement, 'user', canvasElement, snapSoundElement);
+
+    async function run() {
+      await webcam.start();
+      console.log("Webcam started");
+
+      const takePhotoButton = document.getElementById('take-photo');
+      takePhotoButton.onclick = async () => {
+  const imgDataUrl = await webcam.snap();
+  const img = new Image();
+  img.src = imgDataUrl;
+  img.onload = async () => {
+    await predictObjects(img);
+  };
+};
+    }
+
+    async function predictObjects(img) {
+      const mobilenetModel = await mobilenet.load();
+      const predictions = await mobilenetModel.classify(img);
+
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+
+      predictions.forEach(prediction => {
+        const p = document.createElement('p');
+        p.textContent = `${prediction.className} - ${Math.round(prediction.probability * 100)}%`;
+        resultsDiv.appendChild(p);
+      });
+    }
+
+    run();
+  </script>
+</body>
+</html>
